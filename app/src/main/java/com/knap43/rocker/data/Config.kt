@@ -62,6 +62,8 @@ data class Config(
     /** When nothing is playing, only play/pause gestures stay live; everything else is plain volume. */
     val onlyWhilePlaying: Boolean = false,
     val vibrate: Boolean = true,
+    /** Change volume without the system's volume popup; the keys are then always Rocker's. */
+    val hidePanel: Boolean = false,
 ) {
     fun action(gesture: Gesture): Action = actions[gesture] ?: gesture.default
 
@@ -92,6 +94,7 @@ object Store {
             putBoolean("screen_off", next.screenOff)
             putBoolean("only_while_playing", next.onlyWhilePlaying)
             putBoolean("vibrate", next.vibrate)
+            putBoolean("hide_panel", next.hidePanel)
         }.apply()
     }
 
@@ -112,6 +115,7 @@ object Store {
             screenOff = p.getBoolean("screen_off", defaults.screenOff),
             onlyWhilePlaying = p.getBoolean("only_while_playing", defaults.onlyWhilePlaying),
             vibrate = p.getBoolean("vibrate", defaults.vibrate),
+            hidePanel = p.getBoolean("hide_panel", defaults.hidePanel),
         )
         loaded = true
     }

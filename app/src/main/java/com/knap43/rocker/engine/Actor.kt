@@ -87,16 +87,21 @@ class Actor(private val context: Context) {
      * One ordinary volume step. With the screen on this goes through the suggested-stream path, so
      * it changes whatever the button would have (ringer when idle, media when playing, a cast
      * device's volume). While our own session holds the keys that path would loop back into it,
-     * so then the media stream is adjusted directly.
+     * so then the media stream is adjusted directly. Leaving out FLAG_SHOW_UI is all it takes to
+     * keep the system's volume popup away.
      */
     fun volume(key: Key) {
         val direction = if (key == Key.UP) AudioManager.ADJUST_RAISE else AudioManager.ADJUST_LOWER
         if (sessionActive) {
             audio.adjustStreamVolume(AudioManager.STREAM_MUSIC, direction, 0)
         } else {
-            audio.adjustSuggestedStreamVolume(direction, AudioManager.USE_DEFAULT_STREAM_TYPE, AudioManager.FLAG_SHOW_UI)
+            val flags = if (config().hidePanel) 0 else AudioManager.FLAG_SHOW_UI
+            audio.adjustSuggestedStreamVolume(direction, AudioManager.USE_DEFAULT_STREAM_TYPE, flags)
         }
     }
+
+    /** Ringing or on a call: the keys silence the ringer and set call volume, so leave them be. */
+    fun inCall(): Boolean = audio.mode != AudioManager.MODE_NORMAL
 
     private fun media(code: Int) {
         val now = SystemClock.uptimeMillis()

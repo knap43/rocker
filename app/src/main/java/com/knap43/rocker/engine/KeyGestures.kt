@@ -14,12 +14,17 @@ private const val RAMP_MS = 100L
  * down and up and can swallow them, so the gestures are exact: a key whose gestures are all plain
  * volume is let through untouched; any other key is taken over entirely and its volume steps are
  * replayed by hand.
+ *
+ * With "hide the volume popup" on, a plain-volume key is taken too, but only to be replayed at
+ * once: a step on the down and on every auto-repeat, just as the system would, minus the popup.
  */
 class KeyGestures(private val actor: Actor, private val handler: Handler) {
 
     private inner class State(val key: Key) {
         /** We swallowed this press's down, so we own its repeats and its up. */
         var captured = false
+        /** Captured only to hide the popup: every down and repeat is one silent volume step. */
+        var plain = false
         var down = false
         /** The press already became something (a hold, a ramp, half of "both"): its up is silent. */
         var spent = false
@@ -72,12 +77,23 @@ class KeyGestures(private val actor: Actor, private val handler: Handler) {
 
     private fun onDown(self: State, other: State, event: KeyEvent): Boolean {
         // Auto-repeats belong to whoever took the first down.
-        if (event.repeatCount > 0) return self.captured
+        if (event.repeatCount > 0) {
+            if (self.captured && self.plain) actor.volume(self.key)
+            return self.captured
+        }
 
         val config = actor.config()
         val bothMapped = actor.mapped(Gesture.BOTH, config)
         self.captured = bothMapped || Kind.entries.any { actor.mapped(self.key, it, config) }
-        if (!self.captured) return false
+        self.plain = false
+        if (!self.captured) {
+            if (!config.hidePanel || actor.inCall()) return false
+            self.captured = true
+            self.plain = true
+            self.down = true
+            actor.volume(self.key)
+            return true
+        }
 
         self.down = true
         self.spent = false
@@ -97,6 +113,10 @@ class KeyGestures(private val actor: Actor, private val handler: Handler) {
         self.captured = false
         self.down = false
         self.cancelTimers()
+        if (self.plain) {
+            self.plain = false
+            return true
+        }
         if (self.spent) return true
 
         if (actor.mapped(self.key, Kind.DOUBLE)) {
@@ -132,6 +152,7 @@ class KeyGestures(private val actor: Actor, private val handler: Handler) {
             state.cancelTimers()
             handler.removeCallbacks(state.tapTimeout)
             state.captured = false
+            state.plain = false
             state.down = false
             state.spent = false
             state.tapPending = false

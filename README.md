@@ -40,6 +40,10 @@ is kept alive by Android, so there is no foreground notification.
   and can swallow them. A key whose gestures are all plain volume is let through untouched. A key
   with any gesture assigned is taken over entirely, and its ordinary presses and holds are replayed
   as volume steps.
+- **Hiding the volume popup.** With *Hide the volume popup* on, plain-volume keys are swallowed as
+  well and replayed at once — a step on each press and each auto-repeat — through `AudioManager`
+  without `FLAG_SHOW_UI`, so the volume changes and the system panel never appears. While the phone
+  rings or is on a call the keys are left alone, so they can still silence the ringer.
 - **Screen off — `ScreenOffSession` + `VolumeGestures`.** With the screen off, Android gives volume
   keys to the media session that most recently started playing, not to accessibility services.
   While the screen is off, Rocker runs a session that claims to be playing (and plays nothing),

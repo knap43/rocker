@@ -214,6 +214,12 @@ fun HomeScreen() {
                     ) { on -> update { it.copy(onlyWhilePlaying = on) } }
                     RowDivider()
                     SwitchRow(
+                        "Hide the volume popup",
+                        "Volume still changes, silently; ringing and calls keep the usual popup",
+                        config.hidePanel,
+                    ) { on -> update { it.copy(hidePanel = on) } }
+                    RowDivider()
+                    SwitchRow(
                         "Vibrate",
                         "A short tick when a gesture plays, pauses or skips",
                         config.vibrate,
