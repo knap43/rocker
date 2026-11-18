@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Button mappings are a few bytes of preferences; let them travel with a device transfer. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <include domain="sharedpref" path="rocker.xml" />
+    </cloud-backup>
+    <device-transfer>
+        <include domain="sharedpref" path="rocker.xml" />
+    </device-transfer>
+</data-extraction-rules>

@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Rocker</string>
+    <string name="service_label">Rocker</string>
+    <string name="service_description">Lets the volume buttons pause, resume and skip whatever is playing. Rocker reads only volume-button presses, nothing on screen, and sends nothing anywhere.</string>
+</resources>
