@@ -6,10 +6,12 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.hardware.display.DisplayManager
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
 import android.provider.Settings
+import android.view.Display
 import android.view.KeyEvent
 import android.view.accessibility.AccessibilityEvent
 
@@ -36,6 +38,23 @@ class RockerService : AccessibilityService() {
         }
     }
 
+    /**
+     * The display goes dark well before ACTION_SCREEN_OFF is delivered — on some phones by most of
+     * a second — and a key pressed in that gap would miss the session. Start it at the first sign.
+     */
+    private val display = object : DisplayManager.DisplayListener {
+        override fun onDisplayChanged(displayId: Int) {
+            if (displayId != Display.DEFAULT_DISPLAY) return
+            val state = getSystemService(DisplayManager::class.java)?.getDisplay(displayId)?.state ?: return
+            if (state != Display.STATE_ON && state != Display.STATE_UNKNOWN &&
+                getSystemService(PowerManager::class.java)?.isInteractive == false
+            ) screenOff()
+        }
+
+        override fun onDisplayAdded(displayId: Int) = Unit
+        override fun onDisplayRemoved(displayId: Int) = Unit
+    }
+
     override fun onServiceConnected() {
         actor = Actor(this)
         keys = KeyGestures(actor, handler)
@@ -47,6 +66,7 @@ class RockerService : AccessibilityService() {
             addAction(Intent.ACTION_SCREEN_OFF)
             addAction(Intent.ACTION_SCREEN_ON)
         })
+        getSystemService(DisplayManager::class.java)?.registerDisplayListener(display, handler)
         if (getSystemService(PowerManager::class.java)?.isInteractive == false) screenOff()
         Status.runningState.value = true
     }
@@ -68,6 +88,7 @@ class RockerService : AccessibilityService() {
     }
 
     private fun screenOff() {
+        if (session.active) return
         keys.reset()
         if (actor.config().screenOff) {
             session.start()
@@ -84,6 +105,7 @@ class RockerService : AccessibilityService() {
     private fun shutdown() {
         if (!::actor.isInitialized || !Status.runningState.value) return
         runCatching { unregisterReceiver(screen) }
+        getSystemService(DisplayManager::class.java)?.unregisterDisplayListener(display)
         screenOn()
         keys.reset()
         Status.runningState.value = false

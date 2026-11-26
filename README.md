@@ -48,8 +48,12 @@ is kept alive by Android, so there is no foreground notification.
   keys to the media session that most recently started playing, not to accessibility services.
   While the screen is off, Rocker runs a session that claims to be playing (and plays nothing),
   with its volume routed to a `VolumeProvider`, so the presses come to Rocker. All it gets are
-  "raise" and "lower" nudges, so a hold is recognised from the key's auto-repeat, and a release
-  nudge where Android sends one. Volume steps are passed on to the media stream.
+  "raise" and "lower" nudges on the way down and a neutral one on release; Android sends no
+  auto-repeat with the screen off. So the key counts as held from its nudge to its release, a hold
+  fires after the hold time as it does with the screen on, and a plain-volume hold is stepped at the
+  key-repeat rate. On a phone that sends no release nudge, Rocker falls back to reading auto-repeat.
+  The session starts as soon as the display starts going dark, not when `ACTION_SCREEN_OFF` finally
+  arrives, which on some phones is most of a second later. Volume steps are passed on to the media stream.
 - **Media commands** go out as media-button presses through `AudioManager`, which Android routes
   to whichever app last played sound. No notification access is needed.
 
@@ -58,7 +62,8 @@ is kept alive by Android, so there is no foreground notification.
 - **Both keys together** works with the screen on only. With it off, Android reports one key at a
   time.
 - **With the screen off, ordinary presses wait** until Rocker knows they aren't the start of a
-  hold: about the key-repeat delay (~0.5 s), or less where Android reports the release.
+  hold: until the key comes up, or about the key-repeat delay (~0.5 s) on phones that don't report
+  the release.
 - **With the screen off, the keys change media volume only**, not ringer volume. Turn off
   *Work with the screen off* if that matters.
 - **The player can win the keys back.** When it resumes after a pause, Android hands it the volume
